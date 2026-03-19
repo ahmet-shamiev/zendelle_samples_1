@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Rating</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F7F5F0; --surface: #FFFFFF; --border: #E2DDD6;
+      --border-strong: #C8C2B8; --text: #1A1714; --text-muted: #7A746C;
+      --green: #2D6A4F; --green-light: #D8F3DC; --accent: #C17E3A;
+      --star-on: #F5A623; --star-hover: #F7BC5A;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
+    header h1 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; }
+    header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .counter-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; padding: 0.875rem 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+    .counter-stat { text-align: center; }
+    .counter-stat .num { font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; }
+    .counter-stat .lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .counter-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+    .counter-spacer { flex: 1; }
+    .intro-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+    .intro-box h2 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; margin-bottom: 6px; }
+    .intro-box p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .img-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: box-shadow 0.2s, border-color 0.2s; }
+    .img-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+    .img-card.unrated { border-color: #E8A045; box-shadow: 0 0 0 2px #FFF3E0; }
+    .card-img-wrap { position: relative; }
+    .card-img-wrap img { width: 100%; height: 150px; object-fit: cover; display: block; }
+    .sample-badge { position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 20px; font-size: 0.65rem; font-weight: 500; padding: 2px 8px; color: var(--text); }
+    .card-body { padding: 0.875rem; }
+    .question-text { font-size: 0.82rem; color: var(--text); line-height: 1.5; min-height: 44px; margin-bottom: 0.875rem; }
+    .loading-dots { display: flex; gap: 4px; padding: 8px 0; }
+    .dot-anim { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); animation: blink 1.2s infinite; }
+    .dot-anim:nth-child(2) { animation-delay: 0.2s; }
+    .dot-anim:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+    .star-row { display: flex; gap: 4px; align-items: center; justify-content: center; padding: 4px 0; }
+    .star { font-size: 1.6rem; cursor: pointer; color: var(--border); transition: color 0.1s, transform 0.1s; line-height: 1; user-select: none; }
+    .star:hover { transform: scale(1.15); }
+    .star.lit { color: var(--star-on); }
+    .star.hover-lit { color: var(--star-hover); }
+    .rating-label { text-align: center; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; min-height: 16px; }
+    button { font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; }
+    .btn-primary { padding: 10px 28px; border: 1px solid var(--green); border-radius: 8px; font-size: 0.9rem; background: var(--surface); color: var(--green); font-weight: 500; }
+    .btn-primary:hover { background: var(--green-light); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .submit-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .progress-wrap { display: none; }
+    .progress-track { height: 4px; background: var(--border); border-radius: 99px; margin-bottom: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--green); border-radius: 99px; width: 0%; transition: width 0.4s ease; }
+    .status-msg { font-size: 0.82rem; }
+    .success-banner { display: none; background: var(--green-light); border: 1px solid var(--green); border-radius: 12px; padding: 2rem; text-align: center; margin-top: 1.5rem; }
+    .success-banner h2 { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.4rem; color: var(--green); margin-bottom: 8px; }
+    .success-banner p { font-size: 0.85rem; color: #3A6B50; }
+    footer { text-align: center; padding: 2rem; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 3rem; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="dot"></div>
+  <div>
+    <h1>Image Rating</h1>
+    <p>Rate each image from 1 to 5 stars and submit your responses</p>
+  </div>
+</header>
+<main>
+  <div class="counter-bar">
+    <div class="counter-stat"><div class="num" id="cnt-total">0</div><div class="lbl">Total</div></div>
+    <div class="counter-divider"></div>
+    <div class="counter-stat"><div class="num" id="cnt-rated">0</div><div class="lbl">Rated</div></div>
+    <div class="counter-divider"></div>
+    <div class="counter-stat"><div class="num" id="cnt-left">0</div><div class="lbl">Remaining</div></div>
+    <div class="counter-spacer"></div>
+  </div>
+  <div class="intro-box">
+    <h2>Please rate each image</h2>
+    <p>You have <strong id="intro-count">0</strong> images to review. Click the stars to rate each one from 1 (Poor) to 5 (Excellent), then submit.</p>
+  </div>
+  <div class="cards-grid" id="cards-grid"></div>
+  <div id="submit-area">
+    <div class="submit-row">
+      <button class="btn-primary" id="submit-btn" onclick="submitAll()">Submit all ratings</button>
+    </div>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="status-msg" id="status-msg"></div>
+    </div>
+  </div>
+  <div class="success-banner" id="success-banner">
+    <h2>Thank you!</h2>
+    <p>Your ratings have been submitted successfully.</p>
+  </div>
+</main>
+<footer>Powered by Claude AI &amp; Google Sheets</footer>
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDVK6ENLW_6Zz4Ld7ksyovDwU0a2psgRfDVq7rRGRi9IwwLRheanJEfe5DHGh-XsXzOg/exec";
+  const API_URL = "https://api.anthropic.com/v1/messages";
+  const LABELS = ["","Poor","Fair","Good","Very good","Excellent"];
+  const IMAGES = [{"src":"images/901773723969_.pic_hd.jpg","label":"Sample 1"},{"src":"images/911773723970_.pic_hd.jpg","label":"Sample 2"},{"src":"images/921773723971_.pic_hd.jpg","label":"Sample 3"},{"src":"images/931773723973_.pic_hd.jpg","label":"Sample 4"},{"src":"images/941773723974_.pic_hd.jpg","label":"Sample 5"},{"src":"images/951773723975_.pic_hd.jpg","label":"Sample 6"},{"src":"images/961773723976_.pic_hd.jpg","label":"Sample 7"},{"src":"images/971773723978_.pic_hd.jpg","label":"Sample 8"},{"src":"images/981773723979_.pic_hd.jpg","label":"Sample 9"},{"src":"images/991773723980_.pic_hd.jpg","label":"Sample 10"},{"src":"images/1001773723982_.pic_hd.jpg","label":"Sample 11"},{"src":"images/1011773723983_.pic_hd.jpg","label":"Sample 12"},{"src":"images/1021773723984_.pic_hd.jpg","label":"Sample 13"},{"src":"images/1031773723985_.pic_hd.jpg","label":"Sample 14"},{"src":"images/1041773723989_.pic_hd.jpg","label":"Sample 15"},{"src":"images/1051773723990_.pic_hd.jpg","label":"Sample 16"},{"src":"images/1061773723992_.pic_hd.jpg","label":"Sample 17"},{"src":"images/1071773723993_.pic_hd.jpg","label":"Sample 18"},{"src":"images/1081773723994_.pic_hd.jpg","label":"Sample 19"},{"src":"images/1091773723995_.pic_hd.jpg","label":"Sample 20"},{"src":"images/1101773723997_.pic_hd.jpg","label":"Sample 21"},{"src":"images/1111773723998_.pic_hd.jpg","label":"Sample 22"},{"src":"images/1121773723999_.pic_hd.jpg","label":"Sample 23"},{"src":"images/1131773724000_.pic_hd.jpg","label":"Sample 24"},{"src":"images/1141773724001_.pic_hd.jpg","label":"Sample 25"},{"src":"images/1151773724003_.pic_hd.jpg","label":"Sample 26"},{"src":"images/1161773724004_.pic_hd.jpg","label":"Sample 27"},{"src":"images/1171773724005_.pic_hd.jpg","label":"Sample 28"},{"src":"images/1181773724006_.pic_hd.jpg","label":"Sample 29"},{"src":"images/1191773724007_.pic_hd.jpg","label":"Sample 30"},{"src":"images/1201773724009_.pic_hd.jpg","label":"Sample 31"},{"src":"images/1211773724010_.pic_hd.jpg","label":"Sample 32"},{"src":"images/1221773724011_.pic_hd.jpg","label":"Sample 33"},{"src":"images/1231773724012_.pic_hd.jpg","label":"Sample 34"},{"src":"images/1241773724013_.pic_hd.jpg","label":"Sample 35"},{"src":"images/1251773724015_.pic_hd.jpg","label":"Sample 36"},{"src":"images/1261773724016_.pic_hd.jpg","label":"Sample 37"},{"src":"images/1281773739517_.pic_hd.jpg","label":"Sample 38"},{"src":"images/1291773739520_.pic_hd.jpg","label":"Sample 39"},{"src":"images/1301773739521_.pic_hd.jpg","label":"Sample 40"},{"src":"images/1311773739522_.pic_hd.jpg","label":"Sample 41"},{"src":"images/1321773739524_.pic_hd.jpg","label":"Sample 42"},{"src":"images/1331773739525_.pic_hd.jpg","label":"Sample 43"},{"src":"images/1371773754774_.pic_hd.jpg","label":"Sample 44"},{"src":"images/1381773754775_.pic_hd.jpg","label":"Sample 45"},{"src":"images/1391773754777_.pic_hd.jpg","label":"Sample 46"},{"src":"images/1401773754779_.pic_hd.jpg","label":"Sample 47"},{"src":"images/1411773754780_.pic_hd.jpg","label":"Sample 48"},{"src":"images/1421773754782_.pic_hd.jpg","label":"Sample 49"},{"src":"images/1431773754784_.pic_hd.jpg","label":"Sample 50"},{"src":"images/1441773754786_.pic_hd.jpg","label":"Sample 51"},{"src":"images/1451773754787_.pic_hd.jpg","label":"Sample 52"},{"src":"images/1461773754789_.pic_hd.jpg","label":"Sample 53"},{"src":"images/1471773754791_.pic_hd.jpg","label":"Sample 54"},{"src":"images/1481773754792_.pic_hd.jpg","label":"Sample 55"},{"src":"images/1491773754794_.pic_hd.jpg","label":"Sample 56"},{"src":"images/1501773754796_.pic_hd.jpg","label":"Sample 57"},{"src":"images/1511773754797_.pic_hd.jpg","label":"Sample 58"},{"src":"images/1521773754799_.pic_hd.jpg","label":"Sample 59"},{"src":"images/1531773754800_.pic_hd.jpg","label":"Sample 60"},{"src":"images/1541773754802_.pic_hd.jpg","label":"Sample 61"},{"src":"images/1551773754803_.pic_hd.jpg","label":"Sample 62"},{"src":"images/1561773754805_.pic_hd.jpg","label":"Sample 63"},{"src":"images/1571773754807_.pic_hd.jpg","label":"Sample 64"},{"src":"images/1581773754809_.pic_hd.jpg","label":"Sample 65"},{"src":"images/1591773754811_.pic_hd.jpg","label":"Sample 66"},{"src":"images/1601773754813_.pic_hd.jpg","label":"Sample 67"},{"src":"images/1611773754815_.pic_hd.jpg","label":"Sample 68"},{"src":"images/1621773754817_.pic_hd.jpg","label":"Sample 69"},{"src":"images/1631773754818_.pic_hd.jpg","label":"Sample 70"},{"src":"images/1641773754820_.pic_hd.jpg","label":"Sample 71"},{"src":"images/1651773754826_.pic_hd.jpg","label":"Sample 72"},{"src":"images/1661773754828_.pic_hd.jpg","label":"Sample 73"},{"src":"images/1671773754830_.pic_hd.jpg","label":"Sample 74"},{"src":"images/1681773754831_.pic_hd.jpg","label":"Sample 75"},{"src":"images/1691773754833_.pic_hd.jpg","label":"Sample 76"},{"src":"images/1701773754835_.pic_hd.jpg","label":"Sample 77"},{"src":"images/1721773754838_.pic_hd.jpg","label":"Sample 78"},{"src":"images/1741773754842_.pic_hd.jpg","label":"Sample 79"},{"src":"images/1751773754844_.pic_hd.jpg","label":"Sample 80"},{"src":"images/1761773754845_.pic_hd.jpg","label":"Sample 81"},{"src":"images/1771773754847_.pic_hd.jpg","label":"Sample 82"},{"src":"images/1781773754849_.pic_hd.jpg","label":"Sample 83"},{"src":"images/1791773754868_.pic_hd.jpg","label":"Sample 84"},{"src":"images/1801773754870_.pic_hd.jpg","label":"Sample 85"},{"src":"images/1831773760828_.pic_hd.jpg","label":"Sample 86"},{"src":"images/1841773760830_.pic_hd.jpg","label":"Sample 87"},{"src":"images/1851773760832_.pic_hd.jpg","label":"Sample 88"},{"src":"images/1861773760834_.pic_hd.jpg","label":"Sample 89"},{"src":"images/1871773760836_.pic_hd.jpg","label":"Sample 90"},{"src":"images/1881773760838_.pic_hd.jpg","label":"Sample 91"},{"src":"images/1891773760839_.pic_hd.jpg","label":"Sample 92"},{"src":"images/1901773760841_.pic_hd.jpg","label":"Sample 93"},{"src":"images/1911773760843_.pic_hd.jpg","label":"Sample 94"},{"src":"images/1921773760845_.pic_hd.jpg","label":"Sample 95"},{"src":"images/811773723954_.pic_hd.jpg","label":"Sample 96"},{"src":"images/831773723960_.pic_hd.jpg","label":"Sample 97"},{"src":"images/841773723961_.pic_hd.jpg","label":"Sample 98"},{"src":"images/851773723963_.pic_hd.jpg","label":"Sample 99"},{"src":"images/861773723964_.pic_hd.jpg","label":"Sample 100"}];
+  let cards = [];
+
+  function init() {
+    document.getElementById('cnt-total').textContent = IMAGES.length;
+    document.getElementById('cnt-left').textContent = IMAGES.length;
+    document.getElementById('intro-count').textContent = IMAGES.length;
+    const grid = document.getElementById('cards-grid');
+    IMAGES.forEach((img, i) => {
+      const id = 'c' + i;
+      cards.push({ id, rating: 0 });
+      const div = document.createElement('div');
+      div.className = 'img-card';
+      div.id = 'card-' + id;
+      div.innerHTML = `
+        <div class="card-img-wrap">
+          <img src="${img.src}" alt="${img.label}">
+          <div class="sample-badge">${img.label}</div>
+        </div>
+        <div class="card-body">
+          <div class="question-text" id="q-${id}"></div>
+          ${buildStars(id)}
+        </div>
+      `;
+      grid.appendChild(div);
+      generateQuestion(img.src, id);
+    });
+  }
+
+  async function generateQuestion(src, cardId) {
+    const qEl = document.getElementById('q-' + cardId);
+    qEl.innerHTML = '<div class="loading-dots"><div class="dot-anim"></div><div class="dot-anim"></div><div class="dot-anim"></div></div>';
+    try {
+      const imgRes = await fetch(src);
+      const blob = await imgRes.blob();
+      const base64 = await new Promise(res => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result.split(',')[1]);
+        reader.readAsDataURL(blob);
+      });
+      const mediaType = blob.type || 'image/jpeg';
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: 'Generate exactly ONE short question asking the user to rate something specific about the image on a scale of 1 to 5 stars. Guide what aspect to evaluate (e.g. quality, composition, clarity, appeal). Respond with ONLY the question.',
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text', text: 'Generate a star rating question for this image.' }
+          ]}]
+        })
+      });
+      const data = await res.json();
+      qEl.textContent = data.content?.find(b => b.type === 'text')?.text?.trim() || 'How would you rate this image overall?';
+    } catch(e) { qEl.textContent = 'How would you rate this image overall?'; }
+  }
+
+  function buildStars(cardId) {
+    let h = '<div class="star-row">';
+    for (let i = 1; i <= 5; i++) {
+      h += `<span class="star" id="star-${cardId}-${i}"
+        onmouseenter="setStars('${cardId}',${i},true)"
+        onmouseleave="setStars('${cardId}',cards.find(c=>c.id==='${cardId}')?.rating||0,false)"
+        onclick="rateCard('${cardId}',${i})">★</span>`;
+    }
+    h += '</div><div class="rating-label" id="rating-lbl-' + cardId + '"></div>';
+    return h;
+  }
+
+  function setStars(cardId, rating, isHover) {
+    for (let i = 1; i <= 5; i++) {
+      const s = document.getElementById('star-' + cardId + '-' + i);
+      s.classList.remove('lit','hover-lit');
+      if (isHover && i <= rating) s.classList.add('hover-lit');
+      else if (!isHover && i <= rating) s.classList.add('lit');
+    }
+    const lbl = document.getElementById('rating-lbl-' + cardId);
+    const card = cards.find(c => c.id === cardId);
+    lbl.textContent = isHover ? (rating > 0 ? LABELS[rating] : '') : (card?.rating > 0 ? LABELS[card.rating] : '');
+  }
+
+  function rateCard(cardId, rating) {
+    const card = cards.find(c => c.id === cardId);
+    if (!card) return;
+    card.rating = rating;
+    setStars(cardId, rating, false);
+    document.getElementById('card-' + cardId).classList.remove('unrated');
+    updateCounters();
+  }
+
+  function updateCounters() {
+    const rated = cards.filter(c => c.rating > 0).length;
+    document.getElementById('cnt-rated').textContent = rated;
+    document.getElementById('cnt-left').textContent = cards.length - rated;
+  }
+
+  async function submitAll() {
+    const unrated = cards.filter(c => !c.rating);
+    if (unrated.length > 0) {
+      unrated.forEach(c => document.getElementById('card-' + c.id).classList.add('unrated'));
+      showStatus(unrated.length + ' image(s) not rated — highlighted in orange. Submitting anyway in 2s...', '#C17E3A');
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('progress-wrap').style.display = 'block';
+    setProgress(20, 'Preparing...');
+    const timestamp = new Date().toLocaleString();
+    const values = [timestamp, ...cards.map(c => c.rating > 0 ? c.rating : '')];
+    setProgress(60, 'Submitting to Google Sheets...');
+    try {
+      await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ values }) });
+      setProgress(100, '');
+      document.getElementById('progress-wrap').style.display = 'none';
+      document.getElementById('submit-area').style.display = 'none';
+      document.getElementById('success-banner').style.display = 'block';
+      document.querySelectorAll('.img-card').forEach(el => el.style.opacity = '0.5');
+    } catch(e) {
+      showStatus('Submission failed — please try again.', '#9B2335');
+      document.getElementById('submit-btn').disabled = false;
+    }
+  }
+
+  function setProgress(pct, msg) {
+    document.getElementById('progress-fill').style.width = pct + '%';
+    if (msg) { document.getElementById('status-msg').style.color = 'var(--text-muted)'; document.getElementById('status-msg').textContent = msg; }
+  }
+  function showStatus(msg, color) {
+    document.getElementById('progress-wrap').style.display = 'block';
+    document.getElementById('status-msg').style.color = color;
+    document.getElementById('status-msg').textContent = msg;
+  }
+  init();
+</script>
+</body>
+</html>
